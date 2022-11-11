@@ -1,6 +1,5 @@
 #include <VGAX.h>
 #include <Keypad.h>
-#include <DoubleLinkedList.hpp>
 
 // uncomment vgax.h mga2560 define
 #define REFRESH_RATE 6
@@ -81,19 +80,25 @@ void setup() {
     snake.addLast(initial_snake_body[i]);
   }
 
+  //display
   vga.begin();
 }
+
 void loop() {
   char key = keypad.getKey();
   if (key) {
     switch (key) {
-      case '^':
+      case '#':  // play music
         break;
-      case '<':
+      case '*':  // stop music
         break;
-      case '_':
+      case '^':  // SNAKE_UP
         break;
-      case '>':
+      case '_':  // SNAKE_DOWN
+        break;
+      case '<':  // SNAKE_LEFT
+        break;
+      case '>':  // SNAKE_RIGHT
         break;
       default:
         break;
@@ -101,6 +106,7 @@ void loop() {
   }
 
   draw();
+
 
   rhCounter++;
   if (rhCounter >= REFRESH_RATE) {
