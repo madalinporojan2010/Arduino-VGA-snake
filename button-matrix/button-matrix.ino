@@ -12,7 +12,7 @@ char keys[rows][cols] = {
   {'#','<'} 
 };
 
-byte rowPins[rows] = {48, 47, 46};
+byte rowPins[rows] = {48, 47, 46}; // matrix pins
 byte colPins[cols] = {44, 45};
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, rows, cols);
@@ -24,9 +24,8 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   char key = keypad.getKey();
-    if(key)  // Check for a valid key.
+    if(key) 
     {
       switch (key)
       {
