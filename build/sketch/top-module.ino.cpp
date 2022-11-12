@@ -1,3 +1,5 @@
+#include <Arduino.h>
+#line 1 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
 #include <VGAX.h>
 
 // uncomment vgax.h mga2560 define
@@ -86,6 +88,23 @@ char key;
 // snake
 SnakeArray snake = SnakeArray();
 
+#line 89 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void setup();
+#line 124 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void loop();
+#line 174 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void draw();
+#line 179 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void drawWindowBoundries();
+#line 186 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void drawSnake();
+#line 192 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+char readKeys(byte C1, byte C2, byte C3, byte C4);
+#line 211 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void moveLogic(char key);
+#line 246 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void moveSnake(byte dx, byte dy);
+#line 89 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
 void setup() {
     // movement pins
     pinMode(R1_MOVEMENT_PIN, OUTPUT);

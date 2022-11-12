@@ -1,0 +1,52 @@
+[
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "C:\\Users\\Madalin\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\cores\\arduino"
+  },
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "C:\\Users\\Madalin\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\variants\\mega"
+  },
+  {
+    "Sourcefile": "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\build\\sketch\\top-module.ino.cpp",
+    "Include": "VGAX.h",
+    "Includepath": "C:\\Users\\Madalin\\Documents\\Arduino\\libraries\\VGAX"
+  },
+  {
+    "Sourcefile": "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\build\\sketch\\top-module.ino.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\Madalin\\Documents\\Arduino\\libraries\\VGAX\\VGAX.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\Madalin\\Documents\\Arduino\\libraries\\VGAX\\bitblit.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\Madalin\\Documents\\Arduino\\libraries\\VGAX\\blit.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\Madalin\\Documents\\Arduino\\libraries\\VGAX\\blit4.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\Madalin\\Documents\\Arduino\\libraries\\VGAX\\blit8.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\Madalin\\Documents\\Arduino\\libraries\\VGAX\\print.cpp",
+    "Include": "",
+    "Includepath": null
+  }
+]
