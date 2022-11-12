@@ -2,10 +2,17 @@
 
 // uncomment vgax.h mga2560 define
 // VGA DISPLAY
-#define REFRESH_RATE 2
+#define REFRESH_RATE 10
 #define WINDOW_BOUNDRY_SIZE_X 5
 #define WINDOW_BOUNDRY_SIZE_Y 5
 #define WINDOW_BOUNDRY_COLOR 2  // 0-black, 1-blue, 2-red, 3-white
+
+// RANDOM SEED / FOOD
+
+#define IMG_FOOD_WIDTH 5
+#define IMG_FOOD_BWIDTH 2
+#define IMG_FOOD_HEIGHT 5
+#define IMG_FOOD_SPRITES_CNT 4
 
 // MOVEMENT
 
@@ -68,13 +75,6 @@ struct SnakeArray {
     }
 };
 
-const byte rows = 3;
-const byte cols = 2;
-char keys[rows][cols] = {
-    {'*', '>'},
-    {'^', '_'},
-    {'#', '<'}};
-
 // display
 VGAX vga;
 unsigned int rhCounter = 0;
@@ -86,7 +86,19 @@ char key;
 // snake
 SnakeArray snake = SnakeArray();
 
+// food
+//image generated from 2BITIMAGE - by Sandro Maffiodo
+//data size=40 bytes
+const unsigned char img_food_data[IMG_FOOD_SPRITES_CNT][IMG_FOOD_HEIGHT][IMG_FOOD_BWIDTH] PROGMEM={
+{ { 0xff, 0xc0, }, { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, },
+{ { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, },
+{ { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, { 0xff, 0xc0, }, },
+{ { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, }
+};
+static byte foodSidx = 0;
+
 void setup() {
+
     // movement pins
     pinMode(R1_MOVEMENT_PIN, OUTPUT);
     pinMode(R1_MOVEMENT_PIN, HIGH);
@@ -119,6 +131,7 @@ void setup() {
 
     // display
     vga.begin();
+    vga.clear(11);
 }
 
 void loop() {
@@ -174,6 +187,7 @@ void loop() {
 void draw() {
     drawWindowBoundries();
     drawSnake();
+    drawFood();
 }
 
 void drawWindowBoundries() {
@@ -188,6 +202,13 @@ void drawSnake() {
         vga.fillrect(snake.snakePart[i].posX, snake.snakePart[i].posY, snake.snakePart[i].width, snake.snakePart[i].height, snake.snakePart[i].color);
     }
 }
+
+
+void drawFood() {
+    vga.blit((byte*)(img_food_data[foodSidx]), IMG_FOOD_WIDTH, IMG_FOOD_HEIGHT, 40, 40);
+    foodSidx = (foodSidx + 1) % 4;
+}
+
 
 char readKeys(byte C1, byte C2, byte C3, byte C4) {
     UP_READ = digitalRead(C1);

@@ -8,10 +8,17 @@
 
 
 
+// RANDOM SEED / FOOD
+
+
+
+
+
+
 // MOVEMENT
-# 26 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+# 33 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
 // SNAKE PROPERTIES
-# 39 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+# 46 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
 enum COLORS_ENUM {
     BLACK = 0,
     BLUE,
@@ -44,13 +51,6 @@ struct SnakeArray {
     }
 };
 
-const byte rows = 3;
-const byte cols = 2;
-char keys[rows][cols] = {
-    {'*', '>'},
-    {'^', '_'},
-    {'#', '<'}};
-
 // display
 VGAX vga;
 unsigned int rhCounter = 0;
@@ -62,7 +62,23 @@ char key;
 // snake
 SnakeArray snake = SnakeArray();
 
+// food
+//image generated from 2BITIMAGE - by Sandro Maffiodo
+//data size=40 bytes
+const unsigned char img_food_data[4][5][2] 
+# 92 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino" 3
+                                                                                         __attribute__((__progmem__))
+# 92 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+                                                                                                ={
+{ { 0xff, 0xc0, }, { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, },
+{ { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, },
+{ { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, { 0xff, 0xc0, }, },
+{ { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, }
+};
+static byte foodSidx = 0;
+
 void setup() {
+
     // movement pins
     pinMode(48, 0x1);
     pinMode(48, 0x1);
@@ -95,6 +111,7 @@ void setup() {
 
     // display
     vga.begin();
+    vga.clear(11);
 }
 
 void loop() {
@@ -114,7 +131,7 @@ void loop() {
     draw();
 
     rhCounter++;
-    if (rhCounter >= 2) {
+    if (rhCounter >= 10) {
         rhCounter = 0;
 
         // snake movement
@@ -150,6 +167,7 @@ void loop() {
 void draw() {
     drawWindowBoundries();
     drawSnake();
+    drawFood();
 }
 
 void drawWindowBoundries() {
@@ -164,6 +182,13 @@ void drawSnake() {
         vga.fillrect(snake.snakePart[i].posX, snake.snakePart[i].posY, snake.snakePart[i].width, snake.snakePart[i].height, snake.snakePart[i].color);
     }
 }
+
+
+void drawFood() {
+    vga.blit((byte*)(img_food_data[foodSidx]), 5, 5, 40, 40);
+    foodSidx = (foodSidx + 1) % 4;
+}
+
 
 char readKeys(byte C1, byte C2, byte C3, byte C4) {
     UP_READ = digitalRead(C1);
