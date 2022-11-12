@@ -2,15 +2,17 @@
 #include <Keypad.h>
 
 // uncomment vgax.h mga2560 define
-#define REFRESH_RATE 6
+#define REFRESH_RATE 13
 #define WINDOW_BOUNDRY_SIZE_X 5
 #define WINDOW_BOUNDRY_SIZE_Y 5
 #define WINDOW_BOUNDRY_COLOR 2  // 0-black, 1-blue, 2-red, 3-white
 
 #define SNAKE_WIDTH 5
 #define SNAKE_HEIGHT 5
-#define SNAKE_MAX_POSX (VGAX_WIDTH - SNAKE_WIDTH - WINDOW_BOUNDRY_SIZE_X)
-#define SNAKE_MAX_POSY (VGAX_HEIGHT - SNAKE_HEIGHT - WINDOW_BOUNDRY_SIZE_Y)
+#define SNAKE_MAX_POS_UP WINDOW_BOUNDRY_SIZE_X
+#define SNAKE_MAX_POS_DOWN (VGAX_HEIGHT - SNAKE_HEIGHT - WINDOW_BOUNDRY_SIZE_Y)
+#define SNAKE_MAX_POS_LEFT WINDOW_BOUNDRY_SIZE_Y
+#define SNAKE_MAX_POS_RIGHT (VGAX_WIDTH - SNAKE_WIDTH - WINDOW_BOUNDRY_SIZE_X)
 #define SNAKE_ARRAY_SIZE ((VGAX_WIDTH / SNAKE_WIDTH) * (VGAX_HEIGHT / SNAKE_HEIGHT))
 #define SNAKE_INITIAL_SIZE 5  // less than 15
 #define SNAKE_INITIAL_X 10
@@ -23,6 +25,13 @@ enum colors_enum {
   RED,
   WHITE
 };
+
+enum snakeDirection {
+  UP,
+  DOWN,
+  LEFT,
+  RIGHT
+} dir;
 
 struct snake_type {
   byte posX, posY, width, height;
@@ -61,7 +70,9 @@ unsigned int rhCounter = 0;
 SnakeArray snake = SnakeArray();
 
 
+
 void setup() {
+  Serial.begin(9600);
   //mock up snake:
   snake_type initial_snake_body[5];
 
@@ -80,27 +91,24 @@ void setup() {
     snake.addLast(initial_snake_body[i]);
   }
 
+  //movement
+  dir = DOWN;
+
   //display
   vga.begin();
 }
 
 void loop() {
   char key = keypad.getKey();
+  Serial.println(key);
   if (key) {
     switch (key) {
       case '#':  // play music
         break;
       case '*':  // stop music
         break;
-      case '^':  // SNAKE_UP
-        break;
-      case '_':  // SNAKE_DOWN
-        break;
-      case '<':  // SNAKE_LEFT
-        break;
-      case '>':  // SNAKE_RIGHT
-        break;
       default:
+        moveLogic(key);
         break;
     }
   }
@@ -111,16 +119,43 @@ void loop() {
   rhCounter++;
   if (rhCounter >= REFRESH_RATE) {
     rhCounter = 0;
+
+    //snake movement
+    switch (dir) {
+      case UP:
+        if (snake.snakePart[0].posY >= SNAKE_MAX_POS_UP + WINDOW_BOUNDRY_SIZE_Y) {
+          moveSnake(0, -1);
+        }
+        break;
+      case DOWN:
+        if (snake.snakePart[0].posY <= SNAKE_MAX_POS_DOWN - WINDOW_BOUNDRY_SIZE_Y) {
+          moveSnake(0, 1);
+        }
+        break;
+      case LEFT:
+        if (snake.snakePart[0].posX >= SNAKE_MAX_POS_LEFT + WINDOW_BOUNDRY_SIZE_X) {
+          moveSnake(-1, 0);
+        }
+        break;
+      case RIGHT:
+        if (snake.snakePart[0].posX <= SNAKE_MAX_POS_RIGHT - WINDOW_BOUNDRY_SIZE_X) {
+          moveSnake(1, 0);
+        }
+        break;
+      default:
+        break;
+    }
+
     vga.clear(3);
   }
 }
 
 void draw() {
-  drawWindowBoundry();
+  drawWindowBoundries();
   drawSnake();
 }
 
-void drawWindowBoundry() {
+void drawWindowBoundries() {
   vga.fillrect(0, 0, VGAX_WIDTH, WINDOW_BOUNDRY_SIZE_X, WINDOW_BOUNDRY_COLOR);                                                               // up
   vga.fillrect(0, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y, VGAX_WIDTH, WINDOW_BOUNDRY_SIZE_X, WINDOW_BOUNDRY_COLOR);                             // down
   vga.fillrect(0, WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_SIZE_X, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_COLOR);                  // left
@@ -131,4 +166,49 @@ void drawSnake() {
   for (byte i = 0; i < snake.size; i++) {
     vga.fillrect(snake.snakePart[i].posX, snake.snakePart[i].posY, snake.snakePart[i].width, snake.snakePart[i].height, snake.snakePart[i].color);
   }
+}
+
+void moveLogic(char key) {
+  switch (key) {
+    case '^':  //up
+      if (dir != DOWN && dir != UP) {
+        if (snake.snakePart[0].posY >= SNAKE_MAX_POS_UP + WINDOW_BOUNDRY_SIZE_Y) {
+          dir = UP;
+        }
+      }
+      break;
+    case '_':  //down
+      if (dir != DOWN && dir != UP) {
+        if (snake.snakePart[0].posY <= SNAKE_MAX_POS_DOWN + WINDOW_BOUNDRY_SIZE_Y) {
+          dir = DOWN;
+        }
+      }
+      break;
+    case '<':  //left
+      if (dir != LEFT && dir != RIGHT) {
+        if (snake.snakePart[0].posX >= SNAKE_MAX_POS_LEFT + WINDOW_BOUNDRY_SIZE_X) {
+          dir = LEFT;
+        }
+      }
+      break;
+    case '>':  //right
+      if (dir != LEFT && dir != RIGHT) {
+        if (snake.snakePart[0].posX <= SNAKE_MAX_POS_RIGHT + WINDOW_BOUNDRY_SIZE_X) {
+          dir = RIGHT;
+        }
+      }
+      break;
+    default:
+      return;
+  }
+}
+
+void moveSnake(byte dx, byte dy) {
+  for (byte i = snake.size - 1; i > 0; i--) {
+    byte oldColor = snake.snakePart[i].color;
+    snake.snakePart[i] = snake.snakePart[i-1];
+    snake.snakePart[i].color = oldColor;
+  }
+  snake.snakePart[0].posX = snake.snakePart[0].posX + SNAKE_WIDTH * dx;
+  snake.snakePart[0].posY = snake.snakePart[0].posY + SNAKE_HEIGHT * dy;
 }
