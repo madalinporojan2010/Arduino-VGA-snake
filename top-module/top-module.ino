@@ -2,11 +2,29 @@
 #include <Keypad.h>
 
 // uncomment vgax.h mga2560 define
-#define REFRESH_RATE 13
+//VGA DISPLAY
+#define REFRESH_RATE 2
 #define WINDOW_BOUNDRY_SIZE_X 5
 #define WINDOW_BOUNDRY_SIZE_Y 5
 #define WINDOW_BOUNDRY_COLOR 2  // 0-black, 1-blue, 2-red, 3-white
 
+//MOVEMENT
+
+#define R4_PIN 48
+
+#define C1_PIN 47
+#define C2_PIN 46
+#define C3_PIN 45
+#define C4_PIN 44
+
+#define R1_MOVEMENT_PIN R4_PIN
+
+#define C1_MOVEMENT_PIN C4_PIN
+#define C2_MOVEMENT_PIN C3_PIN
+#define C3_MOVEMENT_PIN C2_PIN
+#define C4_MOVEMENT_PIN C1_PIN
+
+//SNAKE PROPERTIES
 #define SNAKE_WIDTH 5
 #define SNAKE_HEIGHT 5
 #define SNAKE_MAX_POS_UP WINDOW_BOUNDRY_SIZE_X
@@ -19,14 +37,14 @@
 #define SNAKE_INITIAL_Y 10
 #define SNAKE_INITIAL_HEAD_COLOR 0
 
-enum colors_enum {
+enum COLORS_ENUM {
   BLACK = 0,
   BLUE,
   RED,
   WHITE
 };
 
-enum snakeDirection {
+enum SNAKE_DIRECTION {
   UP,
   DOWN,
   LEFT,
@@ -59,20 +77,29 @@ char keys[rows][cols] = {
   { '#', '<' }
 };
 
+//display
 VGAX vga;
-
-byte rowPins[rows] = { 48, 47, 46 };  // btn matrix pins
-byte colPins[cols] = { 44, 45 };
-Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, rows, cols);
-
 unsigned int rhCounter = 0;
 
+//movement
+unsigned int UP_READ, DOWN_READ, LEFT_READ, RIGHT_READ;
+char key;
+
+//snake
 SnakeArray snake = SnakeArray();
 
 
-
 void setup() {
-  Serial.begin(9600);
+  //movement pins
+  pinMode(R1_MOVEMENT_PIN, OUTPUT);
+  pinMode(R1_MOVEMENT_PIN, HIGH);
+
+  pinMode(C1_MOVEMENT_PIN, INPUT_PULLUP);
+  pinMode(C2_MOVEMENT_PIN, INPUT_PULLUP);
+  pinMode(C3_MOVEMENT_PIN, INPUT_PULLUP);
+  pinMode(C4_MOVEMENT_PIN, INPUT_PULLUP);
+
+
   //mock up snake:
   snake_type initial_snake_body[5];
 
@@ -99,8 +126,7 @@ void setup() {
 }
 
 void loop() {
-  char key = keypad.getKey();
-  Serial.println(key);
+  key = readKeys(C1_MOVEMENT_PIN, C2_MOVEMENT_PIN, C3_MOVEMENT_PIN, C4_MOVEMENT_PIN);
   if (key) {
     switch (key) {
       case '#':  // play music
@@ -168,6 +194,25 @@ void drawSnake() {
   }
 }
 
+char readKeys(byte C1, byte C2, byte C3, byte C4) {
+  UP_READ = digitalRead(C1);
+  DOWN_READ = digitalRead(C2);
+  LEFT_READ = digitalRead(C3);
+  RIGHT_READ = digitalRead(C4);
+
+  if (UP_READ == 0) {
+    return '^';  //read up
+  } else if (DOWN_READ == 0) {
+    return '_';  //read down
+  } else if (LEFT_READ == 0) {
+    return '<';  //read left
+  } else if (RIGHT_READ == 0) {
+    return '>';  //read right
+  } else {
+    return NULL;
+  }
+}
+
 void moveLogic(char key) {
   switch (key) {
     case '^':  //up
@@ -206,7 +251,7 @@ void moveLogic(char key) {
 void moveSnake(byte dx, byte dy) {
   for (byte i = snake.size - 1; i > 0; i--) {
     byte oldColor = snake.snakePart[i].color;
-    snake.snakePart[i] = snake.snakePart[i-1];
+    snake.snakePart[i] = snake.snakePart[i - 1];
     snake.snakePart[i].color = oldColor;
   }
   snake.snakePart[0].posX = snake.snakePart[0].posX + SNAKE_WIDTH * dx;
