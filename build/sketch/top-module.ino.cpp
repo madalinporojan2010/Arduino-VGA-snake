@@ -4,7 +4,7 @@
 
 // uncomment vgax.h mga2560 define
 // VGA DISPLAY
-#define REFRESH_RATE 10
+#define REFRESH_RATE 5
 #define WINDOW_BOUNDRY_SIZE_X 5
 #define WINDOW_BOUNDRY_SIZE_Y 5
 #define WINDOW_BOUNDRY_COLOR 2  // 0-black, 1-blue, 2-red, 3-white
@@ -45,6 +45,10 @@
 #define SNAKE_INITIAL_Y 10
 #define SNAKE_INITIAL_HEAD_COLOR 0
 
+// FOOD PROPS
+#define FOOD_INITIAL_X (VGAX_WIDTH - 3 * IMG_FOOD_WIDTH)
+#define FOOD_INITIAL_Y (VGAX_HEIGHT - 3 * IMG_FOOD_HEIGHT)
+
 enum COLORS_ENUM {
     BLACK = 0,
     BLUE,
@@ -77,6 +81,12 @@ struct SnakeArray {
     }
 };
 
+struct food_type {
+    byte posX, posY, width, height;
+    food_type()
+        : posX(FOOD_INITIAL_X), posY(FOOD_INITIAL_Y), width(IMG_FOOD_WIDTH), height(IMG_FOOD_HEIGHT) {}
+};
+
 // display
 VGAX vga;
 unsigned int rhCounter = 0;
@@ -99,27 +109,42 @@ const unsigned char img_food_data[IMG_FOOD_SPRITES_CNT][IMG_FOOD_HEIGHT][IMG_FOO
 };
 static byte foodSidx = 0;
 
-#line 100 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-void setup();
-#line 137 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-void loop();
-#line 187 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-void draw();
-#line 193 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-void drawWindowBoundries();
-#line 200 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-void drawSnake();
-#line 207 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-void drawFood();
-#line 213 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-char readKeys(byte C1, byte C2, byte C3, byte C4);
-#line 232 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-void moveLogic(char key);
-#line 267 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-void moveSnake(byte dx, byte dy);
-#line 100 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
-void setup() {
+food_type food = food_type();
 
+static bool inCollison_Snake;
+byte rand_X;
+byte rand_Y;
+
+
+
+#line 118 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void setup();
+#line 154 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void loop();
+#line 206 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void draw();
+#line 212 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void drawWindowBoundries();
+#line 219 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void drawSnake();
+#line 226 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void drawFood();
+#line 232 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+char readKeys(byte C1, byte C2, byte C3, byte C4);
+#line 251 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void moveLogic(char key);
+#line 286 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void moveSnake(byte dx, byte dy);
+#line 296 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void growSnake();
+#line 306 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+byte getRandomMultipleInRange(byte lower, byte upper, byte multiple);
+#line 310 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void generateFoodRandCoords();
+#line 329 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void snakeHeadCollisionWithFood();
+#line 118 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+void setup() {
     // movement pins
     pinMode(R1_MOVEMENT_PIN, OUTPUT);
     pinMode(R1_MOVEMENT_PIN, HIGH);
@@ -152,7 +177,7 @@ void setup() {
 
     // display
     vga.begin();
-    vga.clear(11);
+    vga.clear(WHITE);
 }
 
 void loop() {
@@ -201,21 +226,23 @@ void loop() {
                 break;
         }
 
-        vga.clear(3);
+        snakeHeadCollisionWithFood();
+
+        vga.clear(WHITE);
     }
 }
 
 void draw() {
-    drawWindowBoundries();
-    drawSnake();
     drawFood();
+    drawSnake();
+    drawWindowBoundries();
 }
 
 void drawWindowBoundries() {
     vga.fillrect(0, 0, VGAX_WIDTH, WINDOW_BOUNDRY_SIZE_X, WINDOW_BOUNDRY_COLOR);                                                               // up
     vga.fillrect(0, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y, VGAX_WIDTH, WINDOW_BOUNDRY_SIZE_X, WINDOW_BOUNDRY_COLOR);                             // down
     vga.fillrect(0, WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_SIZE_X, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_COLOR);                  // left
-    vga.fillrect(VGAX_WIDTH - WINDOW_BOUNDRY_SIZE_X, WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_SIZE_X, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y, RED);  // right
+    vga.fillrect(VGAX_WIDTH - WINDOW_BOUNDRY_SIZE_X, WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_SIZE_X, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_COLOR);  // right
 }
 
 void drawSnake() {
@@ -226,7 +253,7 @@ void drawSnake() {
 
 
 void drawFood() {
-    vga.blit((byte*)(img_food_data[foodSidx]), IMG_FOOD_WIDTH, IMG_FOOD_HEIGHT, 40, 40);
+    vga.blit((byte*)(img_food_data[foodSidx]), IMG_FOOD_WIDTH, IMG_FOOD_HEIGHT, food.posX, food.posY);
     foodSidx = (foodSidx + 1) % 4;
 }
 
@@ -295,3 +322,42 @@ void moveSnake(byte dx, byte dy) {
     snake.snakePart[0].posY = snake.snakePart[0].posY + SNAKE_HEIGHT * dy;
 }
 
+void growSnake() {
+    snake_type newPart = {};
+    newPart.posX = 0;
+    newPart.posY = 0;
+    newPart.width = SNAKE_WIDTH;
+    newPart.height = SNAKE_HEIGHT;
+    newPart.color = BLUE;
+    snake.addLast(newPart);
+}
+
+byte getRandomMultipleInRange(byte lower, byte upper, byte multiple) {
+    return  ((rand() % (((upper) / (multiple)) - ((lower) / (multiple)) + 1)) + ((lower) / (multiple))) * (multiple);
+}
+
+void generateFoodRandCoords() {
+    // collision with snake:    
+    do {
+        inCollison_Snake = false;
+        for (byte i = 0; i < snake.size; i++) {
+            rand_X = getRandomMultipleInRange(WINDOW_BOUNDRY_SIZE_X, VGAX_WIDTH - WINDOW_BOUNDRY_SIZE_X - IMG_FOOD_WIDTH, IMG_FOOD_WIDTH);
+            rand_Y = getRandomMultipleInRange(WINDOW_BOUNDRY_SIZE_Y, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y - IMG_FOOD_HEIGHT, IMG_FOOD_HEIGHT);
+
+            if ((rand_X == snake.snakePart[i].posX) && (rand_Y == snake.snakePart[i].posY)) {
+                inCollison_Snake = true;
+                break;
+            }
+        }
+    } while(inCollison_Snake == true); // In some frames the generated food collides with snake. Maybe imposibile to solve?
+
+    food.posX = rand_X;
+    food.posY = rand_Y;
+}
+
+void snakeHeadCollisionWithFood() {
+    if (snake.snakePart[0].posX == food.posX && snake.snakePart[0].posY == food.posY) {
+        growSnake();
+        generateFoodRandCoords();
+    }
+}

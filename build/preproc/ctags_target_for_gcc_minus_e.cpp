@@ -19,6 +19,10 @@
 # 33 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
 // SNAKE PROPERTIES
 # 46 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+// FOOD PROPS
+
+
+
 enum COLORS_ENUM {
     BLACK = 0,
     BLUE,
@@ -51,6 +55,12 @@ struct SnakeArray {
     }
 };
 
+struct food_type {
+    byte posX, posY, width, height;
+    food_type()
+        : posX(((30 /*number of bytes in a row*/*4) /*number of pixels in a row*/ - 3 * 5)), posY((80 /*number of lines*/ - 3 * 5)), width(5), height(5) {}
+};
+
 // display
 VGAX vga;
 unsigned int rhCounter = 0;
@@ -66,9 +76,9 @@ SnakeArray snake = SnakeArray();
 //image generated from 2BITIMAGE - by Sandro Maffiodo
 //data size=40 bytes
 const unsigned char img_food_data[4][5][2] 
-# 92 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino" 3
+# 102 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino" 3
                                                                                          __attribute__((__progmem__))
-# 92 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+# 102 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
                                                                                                 ={
 { { 0xff, 0xc0, }, { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, },
 { { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, },
@@ -77,8 +87,15 @@ const unsigned char img_food_data[4][5][2]
 };
 static byte foodSidx = 0;
 
-void setup() {
+food_type food = food_type();
 
+static bool inCollison_Snake;
+byte rand_X;
+byte rand_Y;
+
+
+
+void setup() {
     // movement pins
     pinMode(48, 0x1);
     pinMode(48, 0x1);
@@ -111,7 +128,7 @@ void setup() {
 
     // display
     vga.begin();
-    vga.clear(11);
+    vga.clear(WHITE);
 }
 
 void loop() {
@@ -131,7 +148,7 @@ void loop() {
     draw();
 
     rhCounter++;
-    if (rhCounter >= 10) {
+    if (rhCounter >= 5) {
         rhCounter = 0;
 
         // snake movement
@@ -160,21 +177,23 @@ void loop() {
                 break;
         }
 
-        vga.clear(3);
+        snakeHeadCollisionWithFood();
+
+        vga.clear(WHITE);
     }
 }
 
 void draw() {
-    drawWindowBoundries();
-    drawSnake();
     drawFood();
+    drawSnake();
+    drawWindowBoundries();
 }
 
 void drawWindowBoundries() {
     vga.fillrect(0, 0, (30 /*number of bytes in a row*/*4) /*number of pixels in a row*/, 5, 2 /* 0-black, 1-blue, 2-red, 3-white*/); // up
     vga.fillrect(0, 80 /*number of lines*/ - 5, (30 /*number of bytes in a row*/*4) /*number of pixels in a row*/, 5, 2 /* 0-black, 1-blue, 2-red, 3-white*/); // down
     vga.fillrect(0, 5, 5, 80 /*number of lines*/ - 5, 2 /* 0-black, 1-blue, 2-red, 3-white*/); // left
-    vga.fillrect((30 /*number of bytes in a row*/*4) /*number of pixels in a row*/ - 5, 5, 5, 80 /*number of lines*/ - 5, RED); // right
+    vga.fillrect((30 /*number of bytes in a row*/*4) /*number of pixels in a row*/ - 5, 5, 5, 80 /*number of lines*/ - 5, 2 /* 0-black, 1-blue, 2-red, 3-white*/); // right
 }
 
 void drawSnake() {
@@ -185,7 +204,7 @@ void drawSnake() {
 
 
 void drawFood() {
-    vga.blit((byte*)(img_food_data[foodSidx]), 5, 5, 40, 40);
+    vga.blit((byte*)(img_food_data[foodSidx]), 5, 5, food.posX, food.posY);
     foodSidx = (foodSidx + 1) % 4;
 }
 
@@ -252,4 +271,44 @@ void moveSnake(byte dx, byte dy) {
     }
     snake.snakePart[0].posX = snake.snakePart[0].posX + 5 * dx;
     snake.snakePart[0].posY = snake.snakePart[0].posY + 5 * dy;
+}
+
+void growSnake() {
+    snake_type newPart = {};
+    newPart.posX = 0;
+    newPart.posY = 0;
+    newPart.width = 5;
+    newPart.height = 5;
+    newPart.color = BLUE;
+    snake.addLast(newPart);
+}
+
+byte getRandomMultipleInRange(byte lower, byte upper, byte multiple) {
+    return ((rand() % (((upper) / (multiple)) - ((lower) / (multiple)) + 1)) + ((lower) / (multiple))) * (multiple);
+}
+
+void generateFoodRandCoords() {
+    // collision with snake:    
+    do {
+        inCollison_Snake = false;
+        for (byte i = 0; i < snake.size; i++) {
+            rand_X = getRandomMultipleInRange(5, (30 /*number of bytes in a row*/*4) /*number of pixels in a row*/ - 5 - 5, 5);
+            rand_Y = getRandomMultipleInRange(5, 80 /*number of lines*/ - 5 - 5, 5);
+
+            if ((rand_X == snake.snakePart[i].posX) && (rand_Y == snake.snakePart[i].posY)) {
+                inCollison_Snake = true;
+                break;
+            }
+        }
+    } while(inCollison_Snake == true); // In some frames the generated food collides with snake. Maybe imposibile to solve?
+
+    food.posX = rand_X;
+    food.posY = rand_Y;
+}
+
+void snakeHeadCollisionWithFood() {
+    if (snake.snakePart[0].posX == food.posX && snake.snakePart[0].posY == food.posY) {
+        growSnake();
+        generateFoodRandCoords();
+    }
 }
