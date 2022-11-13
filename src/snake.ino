@@ -302,8 +302,8 @@ void moveSnake(byte dx, byte dy) {
 
 void growSnake() {
     snake_type newPart = {};
-    newPart.posX = 0;
-    newPart.posY = 0;
+    newPart.posX = snake.snakePart[snake.size - 1].posX;
+    newPart.posY = snake.snakePart[snake.size - 1].posY;
     newPart.width = SNAKE_WIDTH;
     newPart.height = SNAKE_HEIGHT;
     newPart.color = BLUE;
