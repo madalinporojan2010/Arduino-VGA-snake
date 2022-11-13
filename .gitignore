@@ -1,2 +1,5 @@
+#user settings
+.vscode/**
+
 #random files
 *.txt
