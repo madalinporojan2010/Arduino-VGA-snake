@@ -1,0 +1,9 @@
+DIE:
+ - from own tail bite -> head pos != any tail part
+ - from boundry collision -> if head on margin and direction points to wall => die
+ - DEATH MESSAGE ON center of screen eg. "GAME OVER\n Press reset"
+
+Tema plii de la PF
+
+Future implementation:
+ - Buzzer activ

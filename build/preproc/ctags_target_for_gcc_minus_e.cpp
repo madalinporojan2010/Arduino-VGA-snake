@@ -64,6 +64,7 @@ struct food_type {
 // display
 VGAX vga;
 unsigned int rhCounter = 0;
+bool gameOver = false;
 
 // movement
 unsigned int UP_READ, DOWN_READ, LEFT_READ, RIGHT_READ;
@@ -76,20 +77,20 @@ SnakeArray snake = SnakeArray();
 //image generated from 2BITIMAGE - by Sandro Maffiodo
 //data size=40 bytes
 const unsigned char img_food_data[4][5][2] 
-# 102 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino" 3
+# 103 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino" 3
                                                                                          __attribute__((__progmem__))
-# 102 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
+# 103 "c:\\Users\\Madalin\\Documents\\GitHub\\Arduino-VGA-snake\\top-module\\top-module.ino"
                                                                                                 ={
 { { 0xff, 0xc0, }, { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, },
 { { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, },
 { { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, { 0xff, 0xc0, }, },
 { { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, }
 };
-static byte foodSidx = 0;
+byte foodSidx = 0;
 
 food_type food = food_type();
 
-static bool inCollison_Snake;
+bool inCollison_Snake;
 byte rand_X;
 byte rand_Y;
 
@@ -154,22 +155,22 @@ void loop() {
         // snake movement
         switch (dir) {
             case UP:
-                if (snake.snakePart[0].posY >= 5 + 5) {
+                if (snake.snakePart[0].posY >= 0 + 5) {
                     moveSnake(0, -1);
                 }
                 break;
             case DOWN:
-                if (snake.snakePart[0].posY <= (80 /*number of lines*/ - 5 - 5) - 5) {
+                if (snake.snakePart[0].posY <= (80 /*number of lines*/ - 5) - 5) {
                     moveSnake(0, 1);
                 }
                 break;
             case LEFT:
-                if (snake.snakePart[0].posX >= 5 + 5) {
+                if (snake.snakePart[0].posX >= 0 + 5) {
                     moveSnake(-1, 0);
                 }
                 break;
             case RIGHT:
-                if (snake.snakePart[0].posX <= ((30 /*number of bytes in a row*/*4) /*number of pixels in a row*/ - 5 - 5) - 5) {
+                if (snake.snakePart[0].posX <= ((30 /*number of bytes in a row*/*4) /*number of pixels in a row*/ - 5) - 5) {
                     moveSnake(1, 0);
                 }
                 break;
@@ -178,6 +179,8 @@ void loop() {
         }
 
         snakeHeadCollisionWithFood();
+
+        checkGameOver();
 
         vga.clear(WHITE);
     }
@@ -197,15 +200,19 @@ void drawWindowBoundries() {
 }
 
 void drawSnake() {
-    for (byte i = 0; i < snake.size; i++) {
-        vga.fillrect(snake.snakePart[i].posX, snake.snakePart[i].posY, snake.snakePart[i].width, snake.snakePart[i].height, snake.snakePart[i].color);
+    if (!gameOver) {
+        for (byte i = 0; i < snake.size; i++) {
+            vga.fillrect(snake.snakePart[i].posX, snake.snakePart[i].posY, snake.snakePart[i].width, snake.snakePart[i].height, snake.snakePart[i].color);
+        }
     }
 }
 
 
 void drawFood() {
-    vga.blit((byte*)(img_food_data[foodSidx]), 5, 5, food.posX, food.posY);
-    foodSidx = (foodSidx + 1) % 4;
+    if (!gameOver) {
+        vga.blit((byte*)(img_food_data[foodSidx]), 5, 5, food.posX, food.posY);
+        foodSidx = (foodSidx + 1) % 4;
+    }
 }
 
 
@@ -232,28 +239,28 @@ void moveLogic(char key) {
     switch (key) {
         case '^': // up
             if (dir != DOWN && dir != UP) {
-                if (snake.snakePart[0].posY >= 5 + 5) {
+                if (snake.snakePart[0].posY >= 0 + 5) {
                     dir = UP;
                 }
             }
             break;
         case '_': // down
             if (dir != DOWN && dir != UP) {
-                if (snake.snakePart[0].posY <= (80 /*number of lines*/ - 5 - 5) + 5) {
+                if (snake.snakePart[0].posY <= (80 /*number of lines*/ - 5) + 5) {
                     dir = DOWN;
                 }
             }
             break;
         case '<': // left
             if (dir != LEFT && dir != RIGHT) {
-                if (snake.snakePart[0].posX >= 5 + 5) {
+                if (snake.snakePart[0].posX >= 0 + 5) {
                     dir = LEFT;
                 }
             }
             break;
         case '>': // right
             if (dir != LEFT && dir != RIGHT) {
-                if (snake.snakePart[0].posX <= ((30 /*number of bytes in a row*/*4) /*number of pixels in a row*/ - 5 - 5) + 5) {
+                if (snake.snakePart[0].posX <= ((30 /*number of bytes in a row*/*4) /*number of pixels in a row*/ - 5) + 5) {
                     dir = RIGHT;
                 }
             }
@@ -306,9 +313,49 @@ void generateFoodRandCoords() {
     food.posY = rand_Y;
 }
 
+void checkGameOver() {
+    snakeHeadCollisionWithTail();
+    snakeHeadCollisionWithBounds();
+}
+
 void snakeHeadCollisionWithFood() {
     if (snake.snakePart[0].posX == food.posX && snake.snakePart[0].posY == food.posY) {
         growSnake();
         generateFoodRandCoords();
+    }
+}
+
+void snakeHeadCollisionWithTail () {
+    for (byte i = 1; i < snake.size; i++) {
+        if(snake.snakePart[0].posX == snake.snakePart[i].posX && snake.snakePart[0].posY == snake.snakePart[i].posY) {
+            gameOver = true;
+        }
+    }
+}
+
+void snakeHeadCollisionWithBounds () {
+    switch(dir) {
+        case UP:
+            if (snake.snakePart[0].posY < 5) {
+                gameOver = true;
+            }
+            break;
+        case DOWN:
+            if (snake.snakePart[0].posY > 80 /*number of lines*/ - 5 - 5) {
+                gameOver = true;
+            }
+            break;
+        case LEFT:
+            if (snake.snakePart[0].posX < 5) {
+                gameOver = true;
+            }
+            break;
+        case RIGHT:
+            if (snake.snakePart[0].posX > (30 /*number of bytes in a row*/*4) /*number of pixels in a row*/ - 5 - 5) {
+                gameOver = true;
+            }
+            break;
+        default:
+            return;
     }
 }

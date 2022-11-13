@@ -33,10 +33,10 @@
 // SNAKE PROPERTIES
 #define SNAKE_WIDTH 5
 #define SNAKE_HEIGHT 5
-#define SNAKE_MAX_POS_UP WINDOW_BOUNDRY_SIZE_X
-#define SNAKE_MAX_POS_DOWN (VGAX_HEIGHT - SNAKE_HEIGHT - WINDOW_BOUNDRY_SIZE_Y)
-#define SNAKE_MAX_POS_LEFT WINDOW_BOUNDRY_SIZE_Y
-#define SNAKE_MAX_POS_RIGHT (VGAX_WIDTH - SNAKE_WIDTH - WINDOW_BOUNDRY_SIZE_X)
+#define SNAKE_MAX_POS_UP 0
+#define SNAKE_MAX_POS_DOWN (VGAX_HEIGHT - SNAKE_HEIGHT)
+#define SNAKE_MAX_POS_LEFT 0
+#define SNAKE_MAX_POS_RIGHT (VGAX_WIDTH - SNAKE_WIDTH)
 #define SNAKE_ARRAY_SIZE ((VGAX_WIDTH / SNAKE_WIDTH) * (VGAX_HEIGHT / SNAKE_HEIGHT))
 #define SNAKE_INITIAL_SIZE 5  // less than 15
 #define SNAKE_INITIAL_X 10
@@ -88,6 +88,7 @@ struct food_type {
 // display
 VGAX vga;
 unsigned int rhCounter = 0;
+bool gameOver = false;
 
 // movement
 unsigned int UP_READ, DOWN_READ, LEFT_READ, RIGHT_READ;
@@ -105,11 +106,11 @@ const unsigned char img_food_data[IMG_FOOD_SPRITES_CNT][IMG_FOOD_HEIGHT][IMG_FOO
 { { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, { 0xff, 0xc0, }, },
 { { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, }
 };
-static byte foodSidx = 0;
+byte foodSidx = 0;
 
 food_type food = food_type();
 
-static bool inCollison_Snake;
+bool inCollison_Snake;
 byte rand_X;
 byte rand_Y;
 
@@ -199,6 +200,8 @@ void loop() {
 
         snakeHeadCollisionWithFood();
 
+        checkGameOver();
+
         vga.clear(WHITE);
     }
 }
@@ -217,15 +220,19 @@ void drawWindowBoundries() {
 }
 
 void drawSnake() {
-    for (byte i = 0; i < snake.size; i++) {
-        vga.fillrect(snake.snakePart[i].posX, snake.snakePart[i].posY, snake.snakePart[i].width, snake.snakePart[i].height, snake.snakePart[i].color);
+    if (!gameOver) {
+        for (byte i = 0; i < snake.size; i++) {
+            vga.fillrect(snake.snakePart[i].posX, snake.snakePart[i].posY, snake.snakePart[i].width, snake.snakePart[i].height, snake.snakePart[i].color);
+        }
     }
 }
 
 
 void drawFood() {
-    vga.blit((byte*)(img_food_data[foodSidx]), IMG_FOOD_WIDTH, IMG_FOOD_HEIGHT, food.posX, food.posY);
-    foodSidx = (foodSidx + 1) % 4;
+    if (!gameOver) {
+        vga.blit((byte*)(img_food_data[foodSidx]), IMG_FOOD_WIDTH, IMG_FOOD_HEIGHT, food.posX, food.posY);
+        foodSidx = (foodSidx + 1) % 4;
+    }
 }
 
 
@@ -326,9 +333,49 @@ void generateFoodRandCoords() {
     food.posY = rand_Y;
 }
 
+void checkGameOver() {
+    snakeHeadCollisionWithTail();
+    snakeHeadCollisionWithBounds();
+}
+
 void snakeHeadCollisionWithFood() {
     if (snake.snakePart[0].posX == food.posX && snake.snakePart[0].posY == food.posY) {
         growSnake();
         generateFoodRandCoords();
+    }
+}
+
+void snakeHeadCollisionWithTail () {
+    for (byte i = 1; i < snake.size; i++) {
+        if(snake.snakePart[0].posX == snake.snakePart[i].posX && snake.snakePart[0].posY == snake.snakePart[i].posY) {
+            gameOver = true;
+        }
+    }
+}
+
+void snakeHeadCollisionWithBounds () {
+    switch(dir) {
+        case UP:
+            if (snake.snakePart[0].posY < WINDOW_BOUNDRY_SIZE_Y) {
+                gameOver = true;
+            }
+            break;
+        case DOWN:
+            if (snake.snakePart[0].posY > VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y - SNAKE_HEIGHT) {
+                gameOver = true;
+            }
+            break;
+        case LEFT:
+            if (snake.snakePart[0].posX < WINDOW_BOUNDRY_SIZE_X) {
+                gameOver = true;
+            }
+            break;
+        case RIGHT:
+            if (snake.snakePart[0].posX > VGAX_WIDTH - WINDOW_BOUNDRY_SIZE_X - SNAKE_WIDTH) {
+                gameOver = true;
+            }
+            break;
+        default:
+            return;
     }
 }
