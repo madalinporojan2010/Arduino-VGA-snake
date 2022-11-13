@@ -591,6 +591,7 @@ void growSnake() {
     newPart.width = SNAKE_WIDTH;
     newPart.height = SNAKE_HEIGHT;
     newPart.color = BLUE;
+    newPart.bodyDir = snake.snakePart[snake.size - 1].bodyDir;
     snake.addLast(newPart);
 }
 
