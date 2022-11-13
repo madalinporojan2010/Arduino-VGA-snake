@@ -365,7 +365,7 @@ void loop() {
             default:
                 break;
         }
-
+        redirectHead(); // comment for boundry kill
         snakeHeadCollisionWithFood();
 
         if(!gameOver) {
@@ -546,6 +546,33 @@ void moveSnake(byte dx, byte dy) {
     snake.snakePart[0].bodyDir = dir;
 }
 
+void redirectHead() {
+    switch(dir) {
+        case UP:
+            if (snake.snakePart[0].posY < WINDOW_BOUNDRY_SIZE_Y) {
+                snake.snakePart[0].posY = VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y - SNAKE_HEIGHT;
+            }
+            break;
+        case DOWN:
+            if (snake.snakePart[0].posY > VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y - SNAKE_HEIGHT) {
+                snake.snakePart[0].posY = WINDOW_BOUNDRY_SIZE_Y;
+            }
+            break;
+        case LEFT:
+            if (snake.snakePart[0].posX < WINDOW_BOUNDRY_SIZE_X) {
+                snake.snakePart[0].posX = VGAX_WIDTH - WINDOW_BOUNDRY_SIZE_X - SNAKE_WIDTH;
+            }
+            break;
+        case RIGHT:
+            if (snake.snakePart[0].posX > VGAX_WIDTH - WINDOW_BOUNDRY_SIZE_X - SNAKE_WIDTH) {
+                snake.snakePart[0].posX = WINDOW_BOUNDRY_SIZE_X;
+            }
+            break;
+        default:
+            return;
+    }
+}
+
 void growSnake() {
     snake_type newPart = {};
     newPart.posX = snake.snakePart[snake.size - 1].posX;
@@ -581,7 +608,7 @@ void generateFoodRandCoords() {
 
 void checkGameOver() {
     snakeHeadCollisionWithTail();
-    snakeHeadCollisionWithBounds();
+    //snakeHeadCollisionWithBounds(); // used for snake kill by boundry
 }
 
 void snakeHeadCollisionWithFood() {
