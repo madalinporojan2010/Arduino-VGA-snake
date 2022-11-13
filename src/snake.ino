@@ -7,7 +7,7 @@
 #define WINDOW_BOUNDRY_SIZE_Y 5
 #define WINDOW_BOUNDRY_COLOR 2  // 0-black, 1-blue, 2-red, 3-white
 
-// RANDOM SEED / FOOD
+// RANDOM SEED / FOOD SPRITES
 
 #define IMG_FOOD_WIDTH 5
 #define IMG_FOOD_BWIDTH 2
@@ -43,6 +43,28 @@
 #define SNAKE_INITIAL_Y 10
 #define SNAKE_INITIAL_HEAD_COLOR 0
 
+    // SNAKE SPRITES
+#define IMG_SNAKE_WIDTH 5
+#define IMG_SNAKE_BWIDTH 2
+#define IMG_SNAKE_HEIGHT 5
+#define IMG_SNAKE_SPRITES_CNT 14
+
+#define SNAKE_SPRITE_HEAD_UP 0
+#define SNAKE_SPRITE_HEAD_DOWN 1
+#define SNAKE_SPRITE_HEAD_LEFT 2
+#define SNAKE_SPRITE_HEAD_RIGHT 3
+#define SNAKE_SPRITE_BODY_VERTICAL 4
+#define SNAKE_SPRITE_BODY_HORIZONTAL 5
+#define SNAKE_SPRITE_CORNER_RIGHT_UP 6
+#define SNAKE_SPRITE_CORNER_RIGHT_DOWN 7
+#define SNAKE_SPRITE_CORNER_DOWN_RIGHT 8
+#define SNAKE_SPRITE_CORNER_UP_RIGHT 9
+#define SNAKE_SPRITE_TAIL_UP 10
+#define SNAKE_SPRITE_TAIL_DOWN 11
+#define SNAKE_SPRITE_TAIL_LEFT_ 12
+#define SNAKE_SPRITE_TAIL_RIGHT 13
+
+
 // FOOD PROPS
 #define FOOD_INITIAL_X (VGAX_WIDTH - 3 * IMG_FOOD_WIDTH)
 #define FOOD_INITIAL_Y (VGAX_HEIGHT - 3 * IMG_FOOD_HEIGHT)
@@ -59,11 +81,12 @@ enum SNAKE_DIRECTION {
     DOWN,
     LEFT,
     RIGHT
-} dir;
+} lastDir, dir;
 
 struct snake_type {
     byte posX, posY, width, height;
     byte color;
+    SNAKE_DIRECTION bodyDir;
 };
 
 struct SnakeArray {
@@ -97,6 +120,25 @@ char key;
 // snake
 SnakeArray snake = SnakeArray();
 
+//image generated from 2BITIMAGE - by Sandro Maffiodo
+//data size=140 bytes
+const unsigned char img_snake_data[IMG_SNAKE_SPRITES_CNT][IMG_SNAKE_HEIGHT][IMG_SNAKE_BWIDTH] PROGMEM={
+{ { 209, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, },
+{ { 200, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, { 209, 192, }, },
+{ { 255, 192, }, {  64,   0, }, {  42, 128, }, {  64,   0, }, { 255, 192, }, },
+{ { 255, 192, }, {   0,  64, }, { 170,   0, }, {   0,  64, }, { 255, 192, }, },
+{ { 200, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, },
+{ { 255, 192, }, {   0,   0, }, { 170, 128, }, {   0,   0, }, { 255, 192, }, },
+{ { 200, 192, }, {   8, 192, }, { 168, 192, }, {   0, 192, }, { 255, 192, }, },
+{ { 255, 192, }, {   0, 192, }, { 168, 192, }, {   8, 192, }, { 200, 192, }, },
+{ { 200, 192, }, { 200,   0, }, { 202, 128, }, { 192,   0, }, { 255, 192, }, },
+{ { 255, 192, }, { 192,   0, }, { 202, 128, }, { 200,   0, }, { 200, 192, }, },
+{ { 200, 192, }, { 200, 192, }, { 192, 192, }, { 243, 192, }, { 255, 192, }, },
+{ { 255, 192, }, { 243, 192, }, { 192, 192, }, { 200, 192, }, { 200, 192, }, },
+{ { 255, 192, }, {   3, 192, }, { 160, 192, }, {   3, 192, }, { 255, 192, }, },
+{ { 255, 192, }, { 240,   0, }, { 194, 128, }, { 240,   0, }, { 255, 192, }, }
+};
+
 // food
 //image generated from 2BITIMAGE - by Sandro Maffiodo
 //data size=40 bytes
@@ -127,6 +169,8 @@ void setup() {
     pinMode(C4_MOVEMENT_PIN, INPUT_PULLUP);
 
     // mock up snake:
+    dir = DOWN;
+
     snake_type initial_snake_body[5];
 
     for (byte i = 0; i < SNAKE_INITIAL_SIZE; i++) {
@@ -140,12 +184,10 @@ void setup() {
         initial_snake_body[i].posY = SNAKE_INITIAL_Y;
         initial_snake_body[i].height = SNAKE_HEIGHT;
         initial_snake_body[i].width = SNAKE_WIDTH;
+        initial_snake_body[i].bodyDir = LEFT; // initial direction used for sprites
 
         snake.addLast(initial_snake_body[i]);
     }
-
-    // movement
-    dir = DOWN;
 
     // display
     vga.begin();
@@ -222,7 +264,30 @@ void drawWindowBoundries() {
 void drawSnake() {
     if (!gameOver) {
         for (byte i = 0; i < snake.size; i++) {
-            vga.fillrect(snake.snakePart[i].posX, snake.snakePart[i].posY, snake.snakePart[i].width, snake.snakePart[i].height, snake.snakePart[i].color);
+            //vga.fillrect(snake.snakePart[i].posX, snake.snakePart[i].posY, snake.snakePart[i].width, snake.snakePart[i].height, snake.snakePart[i].color);
+            vga.blit((byte*)(img_snake_data[getSnakeSpriteIndex(i)]), IMG_SNAKE_WIDTH, IMG_SNAKE_HEIGHT, snake.snakePart[i].posX, snake.snakePart[i].posY);
+        }
+    }
+}
+
+byte getSnakeSpriteIndex(byte partIndex) {
+    if (partIndex == 0) { // HEAD
+        return SNAKE_SPRITE_HEAD_UP + snake.snakePart[partIndex].bodyDir;
+    } else if (partIndex == snake.size - 1) { // TAIL
+        return SNAKE_SPRITE_TAIL_UP + snake.snakePart[partIndex - 1].bodyDir;
+    } else {
+        if (snake.snakePart[partIndex - 1].bodyDir == snake.snakePart[partIndex].bodyDir) {
+            return SNAKE_SPRITE_BODY_VERTICAL + ((snake.snakePart[partIndex].bodyDir == UP || snake.snakePart[partIndex].bodyDir == DOWN) ? 0 : 1);
+        } else {
+            if ((snake.snakePart[partIndex].bodyDir == RIGHT && snake.snakePart[partIndex - 1].bodyDir == UP) || (snake.snakePart[partIndex].bodyDir == DOWN && snake.snakePart[partIndex - 1].bodyDir == LEFT)) {
+                return SNAKE_SPRITE_CORNER_RIGHT_UP;
+            } else if ((snake.snakePart[partIndex].bodyDir == RIGHT && snake.snakePart[partIndex - 1].bodyDir == DOWN) || (snake.snakePart[partIndex].bodyDir == UP && snake.snakePart[partIndex - 1].bodyDir == LEFT)) {
+                return SNAKE_SPRITE_CORNER_RIGHT_DOWN;
+            } else if ((snake.snakePart[partIndex].bodyDir == DOWN && snake.snakePart[partIndex - 1].bodyDir == RIGHT) || (snake.snakePart[partIndex].bodyDir == LEFT && snake.snakePart[partIndex - 1].bodyDir == UP)) {
+                return SNAKE_SPRITE_CORNER_DOWN_RIGHT;
+            } else {
+                return SNAKE_SPRITE_CORNER_UP_RIGHT;
+            }
         }
     }
 }
@@ -260,6 +325,7 @@ void moveLogic(char key) {
         case '^':  // up
             if (dir != DOWN && dir != UP) {
                 if (snake.snakePart[0].posY >= SNAKE_MAX_POS_UP + WINDOW_BOUNDRY_SIZE_Y) {
+                    lastDir = dir;
                     dir = UP;
                 }
             }
@@ -267,6 +333,7 @@ void moveLogic(char key) {
         case '_':  // down
             if (dir != DOWN && dir != UP) {
                 if (snake.snakePart[0].posY <= SNAKE_MAX_POS_DOWN + WINDOW_BOUNDRY_SIZE_Y) {
+                    lastDir = dir;
                     dir = DOWN;
                 }
             }
@@ -274,6 +341,7 @@ void moveLogic(char key) {
         case '<':  // left
             if (dir != LEFT && dir != RIGHT) {
                 if (snake.snakePart[0].posX >= SNAKE_MAX_POS_LEFT + WINDOW_BOUNDRY_SIZE_X) {
+                    lastDir = dir;
                     dir = LEFT;
                 }
             }
@@ -281,6 +349,7 @@ void moveLogic(char key) {
         case '>':  // right
             if (dir != LEFT && dir != RIGHT) {
                 if (snake.snakePart[0].posX <= SNAKE_MAX_POS_RIGHT + WINDOW_BOUNDRY_SIZE_X) {
+                    lastDir = dir;
                     dir = RIGHT;
                 }
             }
@@ -292,12 +361,13 @@ void moveLogic(char key) {
 
 void moveSnake(byte dx, byte dy) {
     for (byte i = snake.size - 1; i > 0; i--) {
-        byte oldColor = snake.snakePart[i].color;
+        //byte oldColor = snake.snakePart[i].color;
         snake.snakePart[i] = snake.snakePart[i - 1];
-        snake.snakePart[i].color = oldColor;
+        //snake.snakePart[i].color = oldColor;
     }
     snake.snakePart[0].posX = snake.snakePart[0].posX + SNAKE_WIDTH * dx;
     snake.snakePart[0].posY = snake.snakePart[0].posY + SNAKE_HEIGHT * dy;
+    snake.snakePart[0].bodyDir = dir;
 }
 
 void growSnake() {
