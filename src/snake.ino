@@ -14,6 +14,8 @@
 #define SCORE_DIGIT_NUMBER 4
 
 // RANDOM SEED / FOOD SPRITES
+#define MIN_TIME_FOOD_RESPAWN 10000
+#define MAX_TIME_FOOD_RESPAWN 50000
 
 #define IMG_FOOD_WIDTH 5
 #define IMG_FOOD_BWIDTH 2
@@ -247,10 +249,10 @@ SnakeArray snake = SnakeArray();
 //image generated from 2BITIMAGE - by Sandro Maffiodo
 //data size=140 bytes
 const unsigned char img_snake_data[IMG_SNAKE_SPRITES_CNT][IMG_SNAKE_HEIGHT][IMG_SNAKE_BWIDTH] PROGMEM={
-{ { 209, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, },
-{ { 200, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, { 209, 192, }, },
-{ { 255, 192, }, {  64,   0, }, {  42, 128, }, {  64,   0, }, { 255, 192, }, },
-{ { 255, 192, }, {   0,  64, }, { 170,   0, }, {   0,  64, }, { 255, 192, }, },
+{ { 255, 192, }, { 209, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, },
+{ { 200, 192, }, { 200, 192, }, { 200, 192, }, { 209, 192, }, { 255, 192, }, },
+{ { 255, 192, }, { 208,   0, }, { 202, 128, }, { 208,   0, }, { 255, 192, }, },
+{ { 255, 192, }, {   1, 192, }, { 168, 192, }, {   1, 192, }, { 255, 192, }, },
 { { 200, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, { 200, 192, }, },
 { { 255, 192, }, {   0,   0, }, { 170, 128, }, {   0,   0, }, { 255, 192, }, },
 { { 200, 192, }, {   8, 192, }, { 168, 192, }, {   0, 192, }, { 255, 192, }, },
@@ -280,9 +282,13 @@ volatile bool inCollison_Snake;
 volatile byte rand_X;
 volatile byte rand_Y;
 
+volatile static unsigned lastTime0, currentTime0;  
+volatile static unsigned randomTimeout0;
+
 
 
 void setup() {
+
     // movement pins
     pinMode(R1_MOVEMENT_PIN, OUTPUT);
     pinMode(R1_MOVEMENT_PIN, HIGH);
@@ -316,6 +322,10 @@ void setup() {
     // display
     vga.begin();
     vga.clear(WHITE);
+
+    // TIME
+    lastTime0 = vga.millis();
+    randomTimeout0 = getRandomInRange(MIN_TIME_FOOD_RESPAWN, MAX_TIME_FOOD_RESPAWN);
 }
 
 void loop() {
@@ -367,6 +377,7 @@ void loop() {
         }
         redirectHead(); // comment for boundry kill
         snakeHeadCollisionWithFood();
+        regenFoodAfterTimeElapsed();
 
         if(!gameOver) {
             vga.clear(WHITE);
@@ -583,6 +594,10 @@ void growSnake() {
     snake.addLast(newPart);
 }
 
+unsigned getRandomInRange(unsigned lower, unsigned upper) {
+    return  (rand() % (upper - lower + 1)) + lower;
+}
+
 byte getRandomMultipleInRange(byte lower, byte upper, byte multiple) {
     return  ((rand() % (((upper) / (multiple)) - ((lower) / (multiple)) + 1)) + ((lower) / (multiple))) * (multiple);
 }
@@ -604,6 +619,18 @@ void generateFoodRandCoords() {
 
     food.posX = rand_X;
     food.posY = rand_Y;
+
+    randomTimeout0 = getRandomInRange(MIN_TIME_FOOD_RESPAWN, MAX_TIME_FOOD_RESPAWN);
+}
+
+void regenFoodAfterTimeElapsed() {
+    if(snake.snakePart[0].posX != food.posX || snake.snakePart[0].posY != food.posY) {
+        currentTime0 = vga.millis();
+        if(currentTime0 - lastTime0 >= randomTimeout0) {
+            generateFoodRandCoords();
+            lastTime0 = currentTime0;
+        }
+    }
 }
 
 void checkGameOver() {
