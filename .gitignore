@@ -3,3 +3,6 @@
 
 #random files
 *.txt
+
+# build files
+build/**
