@@ -454,8 +454,8 @@ void drawScoreText() {
 
 void drawGameOverText() {
     if(gameOver) {
-        vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, gameOver_Message0, VGAX_WIDTH / 2 - 23, 30, BLACK);
-        vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, gameOver_Message1, VGAX_WIDTH / 2 - 30, 37, BLACK);
+        vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, gameOver_Message0, VGAX_WIDTH / 2 - 23, 30, BLUE);
+        vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, gameOver_Message1, VGAX_WIDTH / 2 - 30, 37, BLUE);
     }
 }
 
@@ -585,13 +585,13 @@ void redirectHead() {
 }
 
 void growSnake() {
-    snake_type newPart = {};
+    static snake_type newPart = {};
     newPart.posX = snake.snakePart[snake.size - 1].posX;
     newPart.posY = snake.snakePart[snake.size - 1].posY;
+    newPart.bodyDir = snake.snakePart[snake.size - 2].bodyDir;
     newPart.width = SNAKE_WIDTH;
     newPart.height = SNAKE_HEIGHT;
     newPart.color = BLUE;
-    newPart.bodyDir = snake.snakePart[snake.size - 1].bodyDir;
     snake.addLast(newPart);
 }
 
