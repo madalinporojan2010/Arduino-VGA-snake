@@ -2,7 +2,7 @@
 
 // uncomment vgax.h mga2560 define
 // VGA DISPLAY
-#define REFRESH_RATE 5
+#define INITIAL_SPEED 7
 #define WINDOW_BOUNDRY_SIZE_X 5
 #define WINDOW_BOUNDRY_SIZE_Y 5
 #define WINDOW_BOUNDRY_COLOR 2  // 0-black, 1-blue, 2-red, 3-white
@@ -116,7 +116,8 @@ struct food_type {
 
 // display
 VGAX vga;
-unsigned int rhCounter = 0;
+volatile unsigned int gameSpeed = INITIAL_SPEED;
+volatile unsigned int rhCounter = 0;
 volatile bool gameOver = false;
 static const char gameOver_Message0[] PROGMEM="GAME OVER";
 static const char gameOver_Message1[] PROGMEM="RESTART GAME";
@@ -336,7 +337,7 @@ void loop() {
 
 
     rhCounter++;
-    if (rhCounter >= REFRESH_RATE) {
+    if (rhCounter >= gameSpeed) {
         rhCounter = 0;
 
         // snake movement
@@ -586,6 +587,9 @@ void checkGameOver() {
 void snakeHeadCollisionWithFood() {
     if (snake.snakePart[0].posX == food.posX && snake.snakePart[0].posY == food.posY) {
         score = (score + 5) % 10000;
+        if(score % 10 == 0) {
+            gameSpeed = gameSpeed > 3 ? gameSpeed - 1 : gameSpeed;
+        }
         growSnake();
         generateFoodRandCoords();
     }
