@@ -11,6 +11,8 @@
 #define FNT_UFONT_HEIGHT 6
 #define FNT_UFONT_SYMBOLS_COUNT 95
 
+#define SCORE_DIGIT_NUMBER 4
+
 // RANDOM SEED / FOOD SPRITES
 
 #define IMG_FOOD_WIDTH 5
@@ -116,7 +118,22 @@ struct food_type {
 VGAX vga;
 unsigned int rhCounter = 0;
 volatile bool gameOver = false;
-const char gameOver_Message[] PROGMEM="GAME OVER\nRestart Game";
+static const char gameOver_Message0[] PROGMEM="GAME OVER";
+static const char gameOver_Message1[] PROGMEM="RESTART GAME";
+static const char score_Message[] PROGMEM="SCORE:";
+
+static const char char_0[] PROGMEM="0";
+static const char char_1[] PROGMEM="1";
+static const char char_2[] PROGMEM="2";
+static const char char_3[] PROGMEM="3";
+static const char char_4[] PROGMEM="4";
+static const char char_5[] PROGMEM="5";
+static const char char_6[] PROGMEM="6";
+static const char char_7[] PROGMEM="7";
+static const char char_8[] PROGMEM="8";
+static const char char_9[] PROGMEM="9";
+
+volatile unsigned short int score = 0;
 
 // font
 //font generated from 2BITFONT - by Sandro Maffiodo
@@ -254,7 +271,7 @@ const unsigned char img_food_data[IMG_FOOD_SPRITES_CNT][IMG_FOOD_HEIGHT][IMG_FOO
 { { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, { 0xff, 0xc0, }, },
 { { 0xff, 0xc0, }, { 0xf7, 0xc0, }, { 0xea, 0xc0, }, { 0xea, 0xc0, }, { 0xff, 0xc0, }, }
 };
-byte foodSidx = 0;
+static byte foodSidx = 0;
 
 food_type food = food_type();
 
@@ -361,10 +378,11 @@ void draw() {
     drawSnake();
     drawWindowBoundries();
     drawGameOverText();
+    drawScoreText();
 }
 
 void drawWindowBoundries() {
-    vga.fillrect(0, 0, VGAX_WIDTH, WINDOW_BOUNDRY_SIZE_X, WINDOW_BOUNDRY_COLOR);                                                               // up
+    vga.fillrect(0, 0, VGAX_WIDTH, WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_COLOR);                                                               // up
     vga.fillrect(0, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y, VGAX_WIDTH, WINDOW_BOUNDRY_SIZE_X, WINDOW_BOUNDRY_COLOR);                             // down
     vga.fillrect(0, WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_SIZE_X, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_COLOR);                  // left
     vga.fillrect(VGAX_WIDTH - WINDOW_BOUNDRY_SIZE_X, WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_SIZE_X, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y, WINDOW_BOUNDRY_COLOR);  // right
@@ -378,11 +396,54 @@ void drawSnake() {
     }
 }
 
+void drawScoreText() {
+    if(gameOver) {
+        vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, score_Message, VGAX_WIDTH / 2 - 25, 44, RED);
+        unsigned short int power_10 = 1;
+        for(signed char i = SCORE_DIGIT_NUMBER - 1; i >= 0; i--) {
+            switch((score / power_10) % 10) {
+                case 0:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_0, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                case 1:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_1, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                case 2:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_2, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                case 3:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_3, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                case 4:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_4, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                case 5:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_5, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                case 6:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_6, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                case 7:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_7, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                case 8:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_8, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                case 9:
+                    vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, char_9, VGAX_WIDTH / 2 + 5 + i * 5, 44, RED);
+                    break;
+                default:
+                    break;
+            }
+            power_10 *= 10;
+        }
+    }
+}
+
 void drawGameOverText() {
     if(gameOver) {
-        vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, gameOver_Message, VGAX_HEIGHT / 2 - 5, 30, BLACK);
-    } else {
-        vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, NULL, VGAX_HEIGHT / 2 - 5, 30, BLACK); // dumbest bug: has to have something printed regardless of game state
+        vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, gameOver_Message0, VGAX_WIDTH / 2 - 23, 30, BLACK);
+        vga.printPROGMEM((byte*)fnt_ufont_data, FNT_UFONT_SYMBOLS_COUNT, FNT_UFONT_HEIGHT, 3, 1, gameOver_Message1, VGAX_WIDTH / 2 - 30, 37, BLACK);
     }
 }
 
@@ -477,9 +538,7 @@ void moveLogic(char key) {
 
 void moveSnake(byte dx, byte dy) {
     for (byte i = snake.size - 1; i > 0; i--) {
-        //byte oldColor = snake.snakePart[i].color;
         snake.snakePart[i] = snake.snakePart[i - 1];
-        //snake.snakePart[i].color = oldColor;
     }
     snake.snakePart[0].posX = snake.snakePart[0].posX + SNAKE_WIDTH * dx;
     snake.snakePart[0].posY = snake.snakePart[0].posY + SNAKE_HEIGHT * dy;
@@ -526,6 +585,7 @@ void checkGameOver() {
 
 void snakeHeadCollisionWithFood() {
     if (snake.snakePart[0].posX == food.posX && snake.snakePart[0].posY == food.posY) {
+        score = (score + 5) % 10000;
         growSnake();
         generateFoodRandCoords();
     }
