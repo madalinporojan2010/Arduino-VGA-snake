@@ -22,6 +22,11 @@
 #define IMG_FOOD_HEIGHT 5
 #define IMG_FOOD_SPRITES_CNT 4
 
+#define IMG_POISON_WIDTH 5
+#define IMG_POISON_BWIDTH 2
+#define IMG_POISON_HEIGHT 5
+#define IMG_POISON_SPRITES_CNT 4
+
 // MOVEMENT
 
 #define R4_PIN 48
@@ -50,6 +55,7 @@
 #define SNAKE_INITIAL_X 10
 #define SNAKE_INITIAL_Y 10
 #define SNAKE_INITIAL_HEAD_COLOR 0
+#define SNAKE_MIN_SIZE 2
 
     // SNAKE SPRITES
 #define IMG_SNAKE_WIDTH 5
@@ -106,6 +112,11 @@ struct SnakeArray {
         if (size < SNAKE_ARRAY_SIZE - 1) {
             snakePart[size] = part;
             size++;
+        }
+    }
+    void removeLast() {
+        if (size > 2) {
+            size--;
         }
     }
 };
@@ -265,7 +276,7 @@ const unsigned char img_snake_data[IMG_SNAKE_SPRITES_CNT][IMG_SNAKE_HEIGHT][IMG_
 { { 255, 192, }, { 240,   0, }, { 194, 128, }, { 240,   0, }, { 255, 192, }, }
 };
 
-// food
+// apple
 //image generated from 2BITIMAGE - by Sandro Maffiodo
 //data size=40 bytes
 const unsigned char img_food_data[IMG_FOOD_SPRITES_CNT][IMG_FOOD_HEIGHT][IMG_FOOD_BWIDTH] PROGMEM={
@@ -276,14 +287,20 @@ const unsigned char img_food_data[IMG_FOOD_SPRITES_CNT][IMG_FOOD_HEIGHT][IMG_FOO
 };
 static byte foodSidx = 0;
 
-food_type food = food_type();
+//data size=40 bytes
+const unsigned char img_poison_data[IMG_POISON_SPRITES_CNT][IMG_POISON_HEIGHT][IMG_POISON_BWIDTH] PROGMEM={
+{ { 255, 192, }, { 255, 192, }, { 251, 192, }, { 213, 192, }, { 213, 192, }, },
+{ { 255, 192, }, { 251, 192, }, { 213, 192, }, { 213, 192, }, { 255, 192, }, },
+{ { 251, 192, }, { 213, 192, }, { 213, 192, }, { 255, 192, }, { 255, 192, }, },
+{ { 255, 192, }, { 251, 192, }, { 213, 192, }, { 213, 192, }, { 255, 192, }, }
+};
+static byte poisonSidx = 0;
 
-volatile bool inCollison_Snake;
-volatile byte rand_X;
-volatile byte rand_Y;
+food_type apple = food_type();
+food_type poison = food_type();
 
-volatile static unsigned lastTime0, currentTime0;  
-volatile static unsigned randomTimeout0;
+volatile static unsigned lastTime0, currentTime0, lastTime1, currentTime1;  
+volatile static unsigned randomTimeout0, randomTimeout1;
 
 
 
@@ -323,9 +340,14 @@ void setup() {
     vga.begin();
     vga.clear(WHITE);
 
+    poison.posY = 2 * WINDOW_BOUNDRY_SIZE_Y;
+
     // TIME
     lastTime0 = vga.millis();
     randomTimeout0 = getRandomInRange(MIN_TIME_FOOD_RESPAWN, MAX_TIME_FOOD_RESPAWN);
+
+    lastTime1 = vga.millis();
+    randomTimeout1 = getRandomInRange(MIN_TIME_FOOD_RESPAWN, MAX_TIME_FOOD_RESPAWN);
 }
 
 void loop() {
@@ -375,11 +397,11 @@ void loop() {
             default:
                 break;
         }
-        redirectHead(); // comment for boundry kill
-        snakeHeadCollisionWithFood();
-        regenFoodAfterTimeElapsed();
 
         if(!gameOver) {
+            redirectHead(); // comment for boundry kill
+            snakeHeadCollisionWithFood();
+            regenFoodAfterTimeElapsed();
             vga.clear(WHITE);
         }
     }
@@ -484,8 +506,10 @@ byte getSnakeSpriteIndex(byte partIndex) {
 
 void drawFood() {
     if (!gameOver) {
-        vga.blit((byte*)(img_food_data[foodSidx]), IMG_FOOD_WIDTH, IMG_FOOD_HEIGHT, food.posX, food.posY);
+        vga.blit((byte*)(img_food_data[foodSidx]), IMG_FOOD_WIDTH, IMG_FOOD_HEIGHT, apple.posX, apple.posY);
+        vga.blit((byte*)(img_poison_data[poisonSidx]), IMG_POISON_WIDTH, IMG_POISON_HEIGHT, poison.posX, poison.posY);
         foodSidx = (foodSidx + 1) % 4;
+        poisonSidx = (poisonSidx + 1) % 4;
     }
 }
 
@@ -595,6 +619,14 @@ void growSnake() {
     snake.addLast(newPart);
 }
 
+void shrinkSnake() {
+    if(snake.size <= SNAKE_MIN_SIZE) {
+        gameOver = true;
+    } else {
+        snake.removeLast();
+    }
+}
+
 unsigned getRandomInRange(unsigned lower, unsigned upper) {
     return  (rand() % (upper - lower + 1)) + lower;
 }
@@ -603,33 +635,51 @@ byte getRandomMultipleInRange(byte lower, byte upper, byte multiple) {
     return  ((rand() % (((upper) / (multiple)) - ((lower) / (multiple)) + 1)) + ((lower) / (multiple))) * (multiple);
 }
 
-void generateFoodRandCoords() {
+void generateFoodRandCoords(bool isPoison) {
     // collision with snake:    
+    static bool inCollison_Snake = false;
+    static byte rand_X, rand_Y;
     do {
         inCollison_Snake = false;
+        rand_X = getRandomMultipleInRange(WINDOW_BOUNDRY_SIZE_X, VGAX_WIDTH - WINDOW_BOUNDRY_SIZE_X - IMG_FOOD_WIDTH, IMG_FOOD_WIDTH);
+        rand_Y = getRandomMultipleInRange(WINDOW_BOUNDRY_SIZE_Y, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y - IMG_FOOD_HEIGHT, IMG_FOOD_HEIGHT);
         for (byte i = 0; i < snake.size; i++) {
-            rand_X = getRandomMultipleInRange(WINDOW_BOUNDRY_SIZE_X, VGAX_WIDTH - WINDOW_BOUNDRY_SIZE_X - IMG_FOOD_WIDTH, IMG_FOOD_WIDTH);
-            rand_Y = getRandomMultipleInRange(WINDOW_BOUNDRY_SIZE_Y, VGAX_HEIGHT - WINDOW_BOUNDRY_SIZE_Y - IMG_FOOD_HEIGHT, IMG_FOOD_HEIGHT);
+            if(((!isPoison) && (rand_X == poison.posX) && (rand_Y == poison.posY)) || (isPoison && (rand_X == apple.posX) && (rand_Y == apple.posY))) {
+                inCollison_Snake = true;
+                break;
+            }
 
             if ((rand_X == snake.snakePart[i].posX) && (rand_Y == snake.snakePart[i].posY)) {
                 inCollison_Snake = true;
                 break;
             }
         }
-    } while(inCollison_Snake == true); // In some frames the generated food collides with snake. Maybe imposibile to solve?
+    } while(inCollison_Snake == true);
 
-    food.posX = rand_X;
-    food.posY = rand_Y;
-
-    randomTimeout0 = getRandomInRange(MIN_TIME_FOOD_RESPAWN, MAX_TIME_FOOD_RESPAWN);
+    if(!isPoison) {
+        apple.posX = rand_X;
+        apple.posY = rand_Y;
+        randomTimeout0 = getRandomInRange(MIN_TIME_FOOD_RESPAWN, MAX_TIME_FOOD_RESPAWN);
+    } else {
+        poison.posX = rand_X;
+        poison.posY = rand_Y;
+        randomTimeout1 = getRandomInRange(MIN_TIME_FOOD_RESPAWN, MAX_TIME_FOOD_RESPAWN);
+    }
 }
 
 void regenFoodAfterTimeElapsed() {
-    if(snake.snakePart[0].posX != food.posX || snake.snakePart[0].posY != food.posY) {
+    if(snake.snakePart[0].posX != apple.posX || snake.snakePart[0].posY != apple.posY) {
         currentTime0 = vga.millis();
         if(currentTime0 - lastTime0 >= randomTimeout0) {
-            generateFoodRandCoords();
+            generateFoodRandCoords(false);
             lastTime0 = currentTime0;
+        }
+    }
+    if(snake.snakePart[0].posX != poison.posX || snake.snakePart[0].posY != poison.posY) {
+        currentTime1 = vga.millis();
+        if(currentTime1 - lastTime1 >= randomTimeout1) {
+            generateFoodRandCoords(true);
+            lastTime1 = currentTime1;
         }
     }
 }
@@ -640,17 +690,25 @@ void checkGameOver() {
 }
 
 void snakeHeadCollisionWithFood() {
-    if (snake.snakePart[0].posX == food.posX && snake.snakePart[0].posY == food.posY) {
+    if (snake.snakePart[0].posX == apple.posX && snake.snakePart[0].posY == apple.posY) {
         score = (score + 5) % 10000;
         if(score % 10 == 0) {
             gameSpeed = gameSpeed > 3 ? gameSpeed - 1 : gameSpeed;
         }
         growSnake();
-        generateFoodRandCoords();
+        generateFoodRandCoords(false);
+    }
+    if (snake.snakePart[0].posX == poison.posX && snake.snakePart[0].posY == poison.posY) {
+        score = (score + 1) % 10000;
+        if(score % 10 == 0) {
+            gameSpeed = gameSpeed > 3 ? gameSpeed - 1 : gameSpeed;
+        }
+        shrinkSnake();
+        generateFoodRandCoords(true);
     }
 }
 
-void snakeHeadCollisionWithTail () {
+void snakeHeadCollisionWithTail() {
     for (byte i = 1; i < snake.size; i++) {
         if(snake.snakePart[0].posX == snake.snakePart[i].posX && snake.snakePart[0].posY == snake.snakePart[i].posY) {
             gameOver = true;
@@ -658,7 +716,7 @@ void snakeHeadCollisionWithTail () {
     }
 }
 
-void snakeHeadCollisionWithBounds () {
+void snakeHeadCollisionWithBounds() {
     switch(dir) {
         case UP:
             if (snake.snakePart[0].posY < WINDOW_BOUNDRY_SIZE_Y) {
