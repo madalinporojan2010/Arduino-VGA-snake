@@ -699,7 +699,7 @@ void snakeHeadCollisionWithFood() {
         generateFoodRandCoords(false);
     }
     if (snake.snakePart[0].posX == poison.posX && snake.snakePart[0].posY == poison.posY) {
-        score = (score + 1) % 10000;
+        score = (score + 5) % 10000;
         if(score % 10 == 0) {
             gameSpeed = gameSpeed > 3 ? gameSpeed - 1 : gameSpeed;
         }
