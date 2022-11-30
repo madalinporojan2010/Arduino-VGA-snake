@@ -10,14 +10,11 @@
  
  ## Project functionality 
  The main Arduino library used for this project is VGAx that generates the corresponding frequency for the HS and VS signals and helps with the screen drawing and rendering process.
- * The project has 2 versions: one with the snake dying from the red walls and one with the snake teleporting on the other side of the wall  
- * The snake can eat 2 types of food:  
-    * Poison: cuts down the size of the snake 
+ * This is an early version 
+ * The snake can eat only one type of food:  
     * Apple: enlarges the snake 
  * The food is generated randomly based on the snake position 
- * The food is regenerated after a random generated time, between 1 and 5 seconds (configurable) 
- * Death of the snake can occur in 2 scenarios: 
-    * Eating poison while the snake has the smallest possible size 
+ * Death of the snake can occur only in one scenario: 
     * Eating its own tail 
  * The texture of the snake and food can be changed easily by using some code generation tools from the VGAx library 
 
