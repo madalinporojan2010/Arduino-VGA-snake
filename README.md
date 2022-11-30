@@ -1,7 +1,5 @@
 # Arduino Snake
 
- ## Version 1.2.0
-
  ## Components used 
     * Arduino MEGA 2560 R3
     * VGA Cable 
