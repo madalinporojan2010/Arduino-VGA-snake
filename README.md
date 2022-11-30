@@ -1,7 +1,6 @@
 # Arduino Snake
 
  ## Version 1.2.0
- Arduino VGA Snake made with VGAX library
 
  ## Components used 
     * Arduino MEGA 2560 R3
