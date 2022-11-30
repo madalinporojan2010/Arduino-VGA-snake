@@ -1,4 +1,5 @@
 # Arduino Snake
+ ![VGA Schematic](./docs/game.png)
 
  ## Components used 
     * Arduino MEGA 2560 R3
