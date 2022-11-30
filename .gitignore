@@ -3,6 +3,7 @@
 
 #random files
 *.txt
+*.docx
 
 # build files
 build/**
