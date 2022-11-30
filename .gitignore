@@ -4,6 +4,7 @@
 #random files
 *.txt
 *.docx
+*.rar
 
 # build files
 build/**
